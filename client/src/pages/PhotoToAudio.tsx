@@ -184,68 +184,70 @@ export default function PhotoToAudio() {
   }, [handleStartCapture]);
 
   return (
-    <div className="relative h-full max-w-md mx-auto bg-white shadow-lg overflow-hidden flex flex-col">
-      <Header onHelpClick={() => setIsHelpModalOpen(true)} />
-      
-      <main className="flex-1 flex flex-col relative overflow-hidden">
-        {/* Views */}
-        {activeView === "welcome" && (
-          <WelcomeView onStartCapture={handleStartCapture} />
-        )}
+    <div className="h-full w-full flex justify-center items-center bg-gray-50">
+      <div className="relative h-full w-full max-w-md mx-auto bg-white shadow-lg overflow-hidden flex flex-col">
+        <Header onHelpClick={() => setIsHelpModalOpen(true)} />
         
-        {activeView === "camera" && (
-          <CameraView
-            videoRef={videoRef}
-            onCapturePhoto={handleCapturePhoto}
-            onSwitchCamera={switchCamera}
-            onCancel={handleCancelCapture}
-          />
-        )}
+        <main className="flex-1 flex flex-col relative overflow-hidden">
+          {/* Views */}
+          {activeView === "welcome" && (
+            <WelcomeView onStartCapture={handleStartCapture} />
+          )}
+          
+          {activeView === "camera" && (
+            <CameraView
+              videoRef={videoRef}
+              onCapturePhoto={handleCapturePhoto}
+              onSwitchCamera={switchCamera}
+              onCancel={handleCancelCapture}
+            />
+          )}
+          
+          {activeView === "preview" && photoUrl && (
+            <PreviewView
+              photoUrl={photoUrl}
+              onRetake={handleRetakePhoto}
+              onConfirm={handleConfirmPhoto}
+            />
+          )}
+          
+          {activeView === "loading" && (
+            <LoadingView
+              status={loadingStatus}
+              detail={loadingDetail}
+              processingStatus={processingStatus}
+            />
+          )}
+          
+          {activeView === "audio" && photoUrl && audioUrl && (
+            <AudioView
+              photoUrl={photoUrl}
+              audioUrl={audioUrl}
+              onNewPhoto={handleNewPhoto}
+              onShare={handleShare}
+            />
+          )}
+          
+          {activeView === "error" && (
+            <ErrorView
+              message={errorMessage}
+              onTryAgain={handleTryAgain}
+            />
+          )}
+        </main>
         
-        {activeView === "preview" && photoUrl && (
-          <PreviewView
-            photoUrl={photoUrl}
-            onRetake={handleRetakePhoto}
-            onConfirm={handleConfirmPhoto}
-          />
-        )}
+        {/* Modals */}
+        <HelpModal
+          isOpen={isHelpModalOpen}
+          onClose={() => setIsHelpModalOpen(false)}
+        />
         
-        {activeView === "loading" && (
-          <LoadingView
-            status={loadingStatus}
-            detail={loadingDetail}
-            processingStatus={processingStatus}
-          />
-        )}
-        
-        {activeView === "audio" && photoUrl && audioUrl && (
-          <AudioView
-            photoUrl={photoUrl}
-            audioUrl={audioUrl}
-            onNewPhoto={handleNewPhoto}
-            onShare={handleShare}
-          />
-        )}
-        
-        {activeView === "error" && (
-          <ErrorView
-            message={errorMessage}
-            onTryAgain={handleTryAgain}
-          />
-        )}
-      </main>
-      
-      {/* Modals */}
-      <HelpModal
-        isOpen={isHelpModalOpen}
-        onClose={() => setIsHelpModalOpen(false)}
-      />
-      
-      <PermissionModal
-        isOpen={isPermissionModalOpen}
-        onCancel={() => setIsPermissionModalOpen(false)}
-        onRetry={handleRetryPermission}
-      />
+        <PermissionModal
+          isOpen={isPermissionModalOpen}
+          onCancel={() => setIsPermissionModalOpen(false)}
+          onRetry={handleRetryPermission}
+        />
+      </div>
     </div>
   );
 }
