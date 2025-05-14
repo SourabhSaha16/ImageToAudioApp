@@ -3,37 +3,30 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { photoProcessSchema, audioResponseSchema } from "@shared/schema";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+// Lambda function URL from the environment
+const LAMBDA_FUNCTION_URL = "https://tzwjm77dveaxax2mlutjt5io6q0iegxp.lambda-url.us-east-1.on.aws/";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize AWS S3 client
-  const s3Client = new S3Client({
-    region: process.env.AWS_REGION || "us-east-1",
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-    },
-  });
-
-  // Get S3 presigned URL for direct upload
+  // Get S3 presigned URL for direct upload using the Lambda function
   app.get("/api/get-upload-url", async (req, res) => {
     try {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.jpg`;
-      const key = `uploads/${fileName}`;
       
-      const command = new PutObjectCommand({
-        Bucket: process.env.S3_BUCKET || "photo-to-audio-bucket",
-        Key: key,
-        ContentType: "image/jpeg",
-      });
+      // Call the Lambda function to get upload URL
+      const uploadUrlEndpoint = `${LAMBDA_FUNCTION_URL}?action=upload-url&filename=${fileName}`;
+      const lambdaResponse = await fetch(uploadUrlEndpoint);
       
-      const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+      if (!lambdaResponse.ok) {
+        throw new Error(`Lambda function returned ${lambdaResponse.status}`);
+      }
+      
+      const responseData = await lambdaResponse.json();
       
       res.json({ 
-        uploadUrl: signedUrl,
-        key: key,
-        bucketUrl: `https://${process.env.S3_BUCKET}.s3.amazonaws.com/${key}`
+        uploadUrl: responseData.uploadUrl,
+        key: responseData.key,
+        bucketUrl: responseData.imageUrl || responseData.url || `${responseData.key}`
       });
     } catch (error) {
       console.error("Error generating upload URL:", error);
@@ -46,13 +39,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = photoProcessSchema.parse(req.body);
       
-      // Call AWS Lambda function
-      const lambdaResponse = await fetch(process.env.LAMBDA_FUNCTION_URL || "", {
+      // Extract the key from the imageUrl
+      const urlParts = validatedData.imageUrl.split('/');
+      const imageKey = urlParts.slice(urlParts.indexOf('uploads')).join('/');
+      
+      // Call AWS Lambda function to process the image
+      const lambdaResponse = await fetch(`${LAMBDA_FUNCTION_URL}?action=process`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ imageUrl: validatedData.imageUrl }),
+        body: JSON.stringify({ image_key: imageKey }),
       });
       
       if (!lambdaResponse.ok) {
@@ -60,7 +57,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const responseData = await lambdaResponse.json();
-      const validatedResponse = audioResponseSchema.parse(responseData);
+      
+      // Transform the response to match our expected schema
+      const audioResponse = {
+        audioUrl: responseData.audioUrl || responseData.audio_url || responseData.url
+      };
+      
+      const validatedResponse = audioResponseSchema.parse(audioResponse);
       
       res.json(validatedResponse);
     } catch (error) {
