@@ -10,11 +10,24 @@
     <meta property="og:title" content="Photo to Audio Converter" />
     <meta property="og:description" content="Take a photo and instantly hear what it sounds like with our AI-powered converter." />
     <meta property="og:type" content="website" />
+    
+    <!-- GitHub Pages SPA routing script -->
+    <script type="text/javascript">
+      // This script handles GitHub Pages single-page app routing
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
   </body>
 </html>

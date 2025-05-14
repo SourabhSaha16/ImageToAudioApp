@@ -11,8 +11,8 @@ interface ProcessImageResponse {
   url?: string;
 }
 
-// Lambda function URL
-const LAMBDA_FUNCTION_URL =
+// Lambda function URL - use environment variable if available, fallback to hardcoded value
+const LAMBDA_FUNCTION_URL = import.meta.env.VITE_LAMBDA_FUNCTION_URL || 
   "https://tzwjm77dveaxax2mlutjt5io6q0iegxp.lambda-url.us-east-1.on.aws/";
 
 export async function getUploadUrl(): Promise<UploadUrlResponse> {
